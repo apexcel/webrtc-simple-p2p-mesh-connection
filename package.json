@@ -1,0 +1,17 @@
+{
+  "name": "webrtc-simple-p2p-mesh-connection",
+  "author": "apexcel <dev.apexcel@gmail.com>",
+  "version": "0.0.1",
+  "description": "Simple implementation with WEBRTC",
+  "scripts": {
+    "dev": "node ./script/launchDev.js",
+    "build": "npm run build -w client"
+  },
+  "workspaces": [
+    "./packages/*"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.6.3"
+  }
+}
