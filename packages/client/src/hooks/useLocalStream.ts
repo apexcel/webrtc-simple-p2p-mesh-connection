@@ -1,6 +1,5 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import SPC from "../lib/SimplePeerConnection";
+import { useEffect } from "react";
+import { useRecoilState } from "recoil";
 import { localStreamAtom } from "../recoil/atoms";
 
 const defaultConstraints = {
@@ -21,20 +20,26 @@ const getMediaStream = async (constraints: MediaStreamConstraints) => {
 }
 
 const useLocalStream = (constraints?: MediaStreamConstraints) => {
-    // const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [localStream, setLocalStream] = useRecoilState(localStreamAtom)
 
     useEffect(() => {
+        return () => {
+            console.log(localStream)
+            localStream?.getTracks().forEach(track => track.stop())
+        }
+    }, [localStream])
+
+    useEffect(() => {
         getMediaStream(constraints ? constraints : defaultConstraints).then(stream => {
-            if (stream && !localStream) {
+            if (stream) {
                 setLocalStream(stream);
             }
         })
 
-        return () => {
-            localStream?.getTracks().forEach(track => track.stop())
-        }
-    }, [localStream])
+        // return () => {
+        //     localStream?.getTracks().forEach(track => track.stop())
+        // }
+    }, [])
 
     return localStream;
 }

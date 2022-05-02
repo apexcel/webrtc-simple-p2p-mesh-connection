@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node ./script/launchDev.js",
     "build": "npm run build -w client",
-    "start": "npm run dev -w server"
+    "start": "npm run start -w server"
   },
   "workspaces": [
     "./packages/*"

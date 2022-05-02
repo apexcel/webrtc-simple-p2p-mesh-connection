@@ -1,6 +1,6 @@
-import React, { KeyboardEvent, memo, SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { KeyboardEvent, useMemo } from 'react';
 import styled from 'styled-components';
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { localStreamAtom, roomIdAtom, usernameAtom } from '../recoil/atoms';
 import Video from '../components/common/Video';
 import Button from '../components/common/Button';
@@ -8,8 +8,6 @@ import Input from '../components/common/Input';
 import { useLocation } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
 import useInput from '../hooks/useInput';
-import SPC from '../lib/SimplePeerConnection';
-import useLocalStream from '../hooks/useLocalStream';
 
 const StyledLayout = styled.div`
     display: flex;

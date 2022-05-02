@@ -1,5 +1,4 @@
 import { atom } from "recoil";
-import { Connection } from "../lib/SimplePeerConnection";
 
 export const localStreamAtom = atom<MediaStream | null>({
     key: 'localStreamAtom',
@@ -24,13 +23,3 @@ export const streamsAtom = atom<{
     key: 'streamsAtom',
     default: []
 });
-
-export const pcsAtom = atom<Map<string, Connection>>({
-    key: 'pcsAtom',
-    default: new Map()
-})
-
-export const connectionStateAtom = atom<Map<string, Connection>>({
-    key: 'connectionStateAtom',
-    default: new Map()
-})

@@ -53,10 +53,6 @@ const Conference = () => {
     const streams = useRecoilValue(streamsAtom);
     const username = useRecoilValue(usernameAtom);
 
-    useEffect(() => {
-        console.log(streams)
-    }, [streams])
-
     return (
         <StyledLayout>
             <StyledVideosWrapper>
