@@ -1,14 +1,15 @@
 import React, { KeyboardEvent, memo, SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { roomIdAtom, userNameAtom } from '../recoil/atoms';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import { localStreamAtom, roomIdAtom, usernameAtom } from '../recoil/atoms';
 import Video from '../components/common/Video';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import { useLocation } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
-import useMediaStream from '../hooks/useMediaStream';
 import useInput from '../hooks/useInput';
+import SPC from '../lib/SimplePeerConnection';
+import useLocalStream from '../hooks/useLocalStream';
 
 const StyledLayout = styled.div`
     display: flex;
@@ -31,12 +32,12 @@ const Preparation = () => {
         userName: ''
     });
 
-    const mediaStream = useMediaStream();
+    const localStream = useRecoilValue(localStreamAtom);
     const location = useLocation();
     const socket = useSocket();
 
     const setRoomId = useSetRecoilState(roomIdAtom);
-    const setUserName = useSetRecoilState(userNameAtom)
+    const setUserName = useSetRecoilState(usernameAtom)
     const disabled = useMemo(() => form.userName.trim() === '', [form]);
 
     const joinRoom = async () => {
@@ -53,7 +54,7 @@ const Preparation = () => {
     return (
         <StyledLayout>
             <StyledVideoWrapper>
-                <Video stream={mediaStream} />
+                <Video stream={localStream} />
             </StyledVideoWrapper>
             <StyledFormWrapper>
                 <Input

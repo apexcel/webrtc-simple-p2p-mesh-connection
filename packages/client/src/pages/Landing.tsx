@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSetRecoilState } from 'recoil';
 import styled from 'styled-components';
 import { requestCreateNewRoom } from '../api';
-import { roomIdAtom, userNameAtom } from '../recoil/atoms';
+import { roomIdAtom, usernameAtom } from '../recoil/atoms';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import useSocket from '../hooks/useSocket';
@@ -23,7 +23,7 @@ const Landing = () => {
     const navigate = useNavigate();
     const socket = useSocket();
     const setRoomId = useSetRecoilState(roomIdAtom);
-    const setUserName = useSetRecoilState(userNameAtom);
+    const setUserName = useSetRecoilState(usernameAtom);
 
     const onCreateNewRoom = async () => {
         setUserName(form.userName);

@@ -1,9 +1,10 @@
 import { Socket } from "socket.io-client";
 import socket from "./socket";
 
-export interface PC {
+export interface Connection {
     pc: RTCPeerConnection
     stream: MediaStream | null
+    username: string
 }
 
 const pcConfig = {
@@ -31,7 +32,8 @@ const pcConfig = {
 
 class SimplePeerConnection {
     private static _instance: SimplePeerConnection;
-    private _pcs: Map<string, PC> = new Map();
+    private _pcs: Map<string, Connection> = new Map();
+    private _localStream: MediaStream | null = null;
     private _socket!: Socket;
 
     constructor(socket: Socket) {
@@ -40,10 +42,19 @@ class SimplePeerConnection {
         SimplePeerConnection._instance = this;
     }
 
-    addPeer(sid: string) {
+    setLocalStream(localStream: MediaStream | null) {
+        this._localStream = localStream;
+    }
+
+    get localStream() {
+        return this._localStream;
+    }
+
+    addPeer(sid: string, username: string) {
         this._pcs.set(sid, {
             pc: new RTCPeerConnection(pcConfig),
-            stream: null
+            stream: null,
+            username
         });
     }
 
@@ -54,13 +65,6 @@ class SimplePeerConnection {
     get pcs() {
         return this._pcs;
     }
-
-    // start(localStream: MediaStream, sid: string) {
-    //     if (localStream && localStream instanceof MediaStream) {
-    //         this.createPeerConnection(sid);
-    //         localStream.getTracks().forEach(track => this._pcs.get(sid)?.pc.addTrack(track, localStream));
-    //     }
-    // }
 
     createPeerConnection(localStream: MediaStream, sid: string) {
         try {

@@ -17,6 +17,14 @@ const StyledBackUpLayer = styled.div`
     z-index: -1;
 `;
 
+const StyledLabel = styled.div`
+    position: absolute;
+    background: rgba(133, 133, 133, 0.5);
+    border-radius: 14px;
+    padding: 8px;
+    margin: 10px;
+`;
+
 const StyledVideo = styled.video`
     display: block;
     width: 100%;
@@ -24,11 +32,13 @@ const StyledVideo = styled.video`
 `;
 
 interface Props {
-    stream: MediaStream
+    stream: MediaStream | null
+    label?: string
 }
 
 const Video = ({
-    stream
+    stream,
+    label
 }: Props) => {
     const ref = useRef<HTMLVideoElement>(null);
 
@@ -38,6 +48,7 @@ const Video = ({
 
     return (
         <StyledWrapper>
+            { label ? <StyledLabel>{label}</StyledLabel> : null }
             <StyledVideo
                 ref={ref}
                 playsInline={true}

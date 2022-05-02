@@ -1,14 +1,14 @@
 import { selector } from "recoil";
-import { roomIdAtom, userNameAtom } from "./atoms";
+import { roomIdAtom, usernameAtom } from "./atoms";
 
 export const userSelector = selector({
     key: 'userSelector',
     get: ({ get }) => {
-        const userName = get(userNameAtom);
+        const username = get(usernameAtom);
         const roomId = get(roomIdAtom);
 
         return {
-            userName,
+            username,
             roomId
         }
     }

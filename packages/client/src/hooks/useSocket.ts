@@ -1,71 +1,105 @@
 import { useEffect } from "react";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import socket from "../lib/socket";
-import { mediaStreamAtom, streamsAtom } from "../recoil/atoms";
-import { userSelector } from "../recoil/selectors";
-import SPC from '../lib/SimplePeerConnection'
+import { localStreamAtom, streamsAtom } from "../recoil/atoms";
+import useConnection from "./useConnection";
+import usePeerConnection from "./usePeerConnection";
 
 const useSocket = () => {
-    const { userName, roomId } = useRecoilValue(userSelector);
-    const mediaStream = useRecoilValue(mediaStreamAtom);
+    const localStream = useRecoilValue(localStreamAtom);
     const setStreams = useSetRecoilState(streamsAtom);
+    // const {
+    //     createPeerConnection,
+    //     isIncomer,
+    //     setIncomer,
+    //     addPeer,
+    //     addPeers,
+    //     connections,
+    //     makeAnswer
+    // } = usePeerConnection()
 
-    const onSocketJoin = (sids: string[]) => {
-        sids.forEach(sid => SPC.addPeer(sid));
-        SPC.pcs.forEach((_, sid) => SPC.createPeerConnection(mediaStream, sid));
+    // useEffect(() => {
+    //     createPeerConnection()
+    // }, [localStream, connections])
+
+    const {
+        addPeer,
+        removePeer,
+        createConnection,
+        makeAnswer,
+        makeOffer,
+        connections
+    } = useConnection()
+
+    const joinRoom = (roomId: string, username: string) => {
+        socket.emit('join', { roomId, username });
     }
 
-    const onSocketJoined = async (sid: string) => {
-        SPC.addPeer(sid);
-        SPC.createPeerConnection(mediaStream, sid);
-        SPC.makeOffer(sid);
+    const onSocketJoin = (users: Record<string, string>) => {
+        console.log('onSocketJoin data:', users)
+        Object.entries(users).forEach(([sid, username]) => addPeer(sid, username));
+        Object.entries(users).forEach(([sid, username]) => createConnection(sid));
     }
 
-    const onCandidate = ({ sender, data }: { sender: string, data: any }) => {
-        SPC.pcs.get(sender)?.pc.addIceCandidate(new RTCIceCandidate({
+    const onSocketJoined = ({ sid, username }: { sid: string, username: string }) => {
+        console.log('onSocketJoined data:', { sid, username })
+        addPeer(sid, username);
+        createConnection(sid);
+        makeOffer(sid);
+    }
+
+    const onSocketIceCandidate = ({ sender, data }: { sender: string, data: any }) => {
+        console.log('onSocketIceCandidate data', { sender, data })
+        connections.current.get(sender)?.pc.addIceCandidate(new RTCIceCandidate({
+            sdpMid: data.sdpMid,
             sdpMLineIndex: data.sdpMLineIndex,
             candidate: data.candidate
-        }))
-        const streams = Array.from(SPC.pcs).map(([_, {stream}]) => stream);
-        setStreams(streams);
+        }));
+        const connectionsArray = Array.from(connections.current).map(([sid, { stream, username }]) => ({ sid, stream, username }));
+        setStreams(connectionsArray);
     }
 
-    const gotOffer = ({ sender, data }: { sender: string, data: any }) => {
-        console.log('have got offer')
-        SPC.pcs.get(sender)!.pc.setRemoteDescription(new RTCSessionDescription(data)).then(() => {
-            SPC.makeAnswer(sender);
+    const onSocketGotOffer = ({ sender, data }: { sender: string, data: any }) => {
+        console.log('onSocketGotOffer data', { sender, data })
+        connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data)).then(() => {
+            makeAnswer(sender);
         });
     }
 
-    const gotAnswer = ({ sender, data }: { sender: string, data: any }) => {
-        console.log('have got answer')
-        SPC.pcs.get(sender)!.pc.setRemoteDescription(new RTCSessionDescription(data));
+    const onSocketGotAnswer = ({ sender, data }: { sender: string, data: any }) => {
+        console.log('onSocketGotAnswer data', { sender, data })
+        connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data));
+    }
+
+    const onSocketDisconnected = (sid: string) => {
+        connections.current.get(sid)?.pc.close();
+        connections.current.get(sid)?.stream?.getTracks().forEach(track => track.stop());
+        removePeer(sid);
+        const connectionsArray = Array.from(connections.current).map(([sid, { stream, username }]) => ({ sid, stream, username }));
+        setStreams(connectionsArray);
     }
 
     const connect = () => {
         useEffect(() => {
-            socket.on('ice-candidate', onCandidate)
-            socket.on('have-got-offer', gotOffer)
-            socket.on('have-got-answer', gotAnswer)
-        }, [])
-
-        useEffect(() => {
             socket.on('join', onSocketJoin)
             socket.on('joined', onSocketJoined)
-
             return () => {
                 socket.off('join', onSocketJoin)
                 socket.off('joined', onSocketJoined)
             }
-        }, [mediaStream])
-    }
+        }, [localStream])
 
-    const joinRoom = (roomId: string, userName: string) => {
-        socket.emit('join', { roomId, userName });
-    }
-
-    const sendMessage = (message: string) => {
-        socket.emit('message', { userName, roomId, message });
+        useEffect(() => {
+            socket.on('ice-candidate', onSocketIceCandidate)
+            socket.on('have-got-offer', onSocketGotOffer)
+            socket.on('have-got-answer', onSocketGotAnswer)
+            socket.on('user-exited', onSocketDisconnected)
+            // return () => {
+            //     socket.off('ice-candidate', onSocketIceCandidate)
+            //     socket.off('have-got-offer', onSocketGotOffer)
+            //     socket.off('have-got-answer', onSocketGotAnswer)
+            // }
+        }, [])
     }
 
     return {
