@@ -1,12 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilValue } from 'recoil';
 import styled from 'styled-components';
 import Video from '../components/common/Video';
-import useConnection from '../hooks/useConnection';
-import useLocalStream from '../hooks/useLocalStream';
-import SPC from '../lib/SimplePeerConnection';
-import socket from '../lib/socket';
-import { localStreamAtom, pcsAtom, streamsAtom, usernameAtom } from '../recoil/atoms';
+import { localStreamAtom, streamsAtom, usernameAtom } from '../recoil/atoms';
 
 const StyledLayout = styled.div`
     display: flex;
@@ -51,29 +47,15 @@ const StyledBottomNavigation = styled.div`
     background-color: #1a1a1a;
 `;
 
-const StyledTest = styled.div`
-    position: relative;
-    margin: 0 40px;
-`;
-
-const Test = styled.div`
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 14px;
-    background-color: green;
-`;
-
 const Conference = () => {
     const localStream = useRecoilValue(localStreamAtom);
     const [visibleState, setVisibleState] = useState(false);
     const streams = useRecoilValue(streamsAtom);
     const username = useRecoilValue(usernameAtom);
-    const { connections } = useConnection()
-    const connectionsArray = Array.from(connections.current);
 
+    useEffect(() => {
+        console.log(streams)
+    }, [streams])
 
     return (
         <StyledLayout>
@@ -81,7 +63,7 @@ const Conference = () => {
                 <StyledStreamWrapper>
                     <Video stream={localStream} label={username} />
                     {
-                        streams.map(({stream, sid, username}) => <Video key={sid} stream={stream} label={username}/>)
+                        streams.map(({stream, sid, username}) => <Video key={sid} stream={stream} label={username} uid={sid}/>)
                     }
                 </StyledStreamWrapper>
                 <StyledChatWrapper visible={visibleState}>

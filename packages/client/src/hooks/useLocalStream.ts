@@ -33,9 +33,8 @@ const useLocalStream = (constraints?: MediaStreamConstraints) => {
 
         return () => {
             localStream?.getTracks().forEach(track => track.stop())
-            console.log(localStream)
         }
-    }, [])
+    }, [localStream])
 
     return localStream;
 }

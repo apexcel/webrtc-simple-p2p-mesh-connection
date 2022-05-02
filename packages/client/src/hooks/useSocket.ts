@@ -3,24 +3,10 @@ import { useRecoilValue, useSetRecoilState } from "recoil";
 import socket from "../lib/socket";
 import { localStreamAtom, streamsAtom } from "../recoil/atoms";
 import useConnection from "./useConnection";
-import usePeerConnection from "./usePeerConnection";
 
 const useSocket = () => {
     const localStream = useRecoilValue(localStreamAtom);
     const setStreams = useSetRecoilState(streamsAtom);
-    // const {
-    //     createPeerConnection,
-    //     isIncomer,
-    //     setIncomer,
-    //     addPeer,
-    //     addPeers,
-    //     connections,
-    //     makeAnswer
-    // } = usePeerConnection()
-
-    // useEffect(() => {
-    //     createPeerConnection()
-    // }, [localStream, connections])
 
     const {
         addPeer,
@@ -36,20 +22,17 @@ const useSocket = () => {
     }
 
     const onSocketJoin = (users: Record<string, string>) => {
-        console.log('onSocketJoin data:', users)
         Object.entries(users).forEach(([sid, username]) => addPeer(sid, username));
         Object.entries(users).forEach(([sid, username]) => createConnection(sid));
     }
 
     const onSocketJoined = ({ sid, username }: { sid: string, username: string }) => {
-        console.log('onSocketJoined data:', { sid, username })
         addPeer(sid, username);
         createConnection(sid);
         makeOffer(sid);
     }
 
     const onSocketIceCandidate = ({ sender, data }: { sender: string, data: any }) => {
-        console.log('onSocketIceCandidate data', { sender, data })
         connections.current.get(sender)?.pc.addIceCandidate(new RTCIceCandidate({
             sdpMid: data.sdpMid,
             sdpMLineIndex: data.sdpMLineIndex,
@@ -60,23 +43,22 @@ const useSocket = () => {
     }
 
     const onSocketGotOffer = ({ sender, data }: { sender: string, data: any }) => {
-        console.log('onSocketGotOffer data', { sender, data })
         connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data)).then(() => {
             makeAnswer(sender);
         });
     }
 
     const onSocketGotAnswer = ({ sender, data }: { sender: string, data: any }) => {
-        console.log('onSocketGotAnswer data', { sender, data })
         connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data));
     }
 
     const onSocketDisconnected = (sid: string) => {
-        connections.current.get(sid)?.pc.close();
-        connections.current.get(sid)?.stream?.getTracks().forEach(track => track.stop());
+        if (!connections.current.has(sid)) return;
+        const { pc, stream } = connections.current.get(sid)!;
+        pc.close();
+        stream?.getTracks().forEach(track => track.stop());
         removePeer(sid);
-        const connectionsArray = Array.from(connections.current).map(([sid, { stream, username }]) => ({ sid, stream, username }));
-        setStreams(connectionsArray);
+        setStreams(prev => prev.filter((pcs) => pcs.sid !== sid));
     }
 
     const connect = () => {
@@ -98,6 +80,7 @@ const useSocket = () => {
             //     socket.off('ice-candidate', onSocketIceCandidate)
             //     socket.off('have-got-offer', onSocketGotOffer)
             //     socket.off('have-got-answer', onSocketGotAnswer)
+            //     socket.off('user-exited', onSocketDisconnected)
             // }
         }, [])
     }

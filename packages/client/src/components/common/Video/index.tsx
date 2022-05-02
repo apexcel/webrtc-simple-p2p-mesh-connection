@@ -34,11 +34,13 @@ const StyledVideo = styled.video`
 interface Props {
     stream: MediaStream | null
     label?: string
+    uid?: string
 }
 
 const Video = ({
     stream,
-    label
+    label,
+    uid,
 }: Props) => {
     const ref = useRef<HTMLVideoElement>(null);
 
@@ -53,6 +55,7 @@ const Video = ({
                 ref={ref}
                 playsInline={true}
                 autoPlay={true}
+                data-uid={uid}
             />
             <StyledBackUpLayer />
         </StyledWrapper>

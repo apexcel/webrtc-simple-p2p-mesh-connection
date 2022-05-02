@@ -9,10 +9,8 @@ import Preparation from './pages/Preparation';
 import { usernameAtom } from './recoil/atoms';
 
 const App = () => {
-    useLocalStream()
-
+    useLocalStream();
     useEffect(() => {
-        console.log('App Created')
         document.body.style.margin = '0';
     }, [])
 
