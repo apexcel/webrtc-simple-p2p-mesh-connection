@@ -5,7 +5,8 @@
   "description": "Simple implementation with WEBRTC",
   "scripts": {
     "dev": "node ./script/launchDev.js",
-    "build": "npm run build -w client"
+    "build": "npm run build -w client",
+    "start": "npm run dev -w server"
   },
   "workspaces": [
     "./packages/*"
