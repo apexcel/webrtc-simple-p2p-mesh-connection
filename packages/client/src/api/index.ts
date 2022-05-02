@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://localhost:5000';
+const dev = 'http://localhost:5000';
+const prod = 'https://webrtc-simple-p2p-mesh.herokuapp.com/';
+
+axios.defaults.baseURL = prod;
 
 export const requestCreateNewRoom = async () => {
     try {
