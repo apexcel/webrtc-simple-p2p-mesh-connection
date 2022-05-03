@@ -29,7 +29,6 @@ const Preparation = () => {
     const [form, setForm] = useInput({
         userName: ''
     });
-
     const localStream = useRecoilValue(localStreamAtom);
     const location = useLocation();
     const socket = useSocket();

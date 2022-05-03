@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import styled from 'styled-components';
+import Button from '../components/common/Button';
 import Video from '../components/common/Video';
 import { localStreamAtom, streamsAtom, usernameAtom } from '../recoil/atoms';
 
@@ -53,11 +54,15 @@ const Conference = () => {
     const streams = useRecoilValue(streamsAtom);
     const username = useRecoilValue(usernameAtom);
 
+    useEffect(() => {
+        console.log(streams)
+    }, [streams])
+
     return (
         <StyledLayout>
             <StyledVideosWrapper>
                 <StyledStreamWrapper>
-                    <Video stream={localStream} label={username} />
+                    <Video stream={localStream} label={username}/>
                     {
                         streams.map(({stream, sid, username}) => <Video key={sid} stream={stream} label={username} uid={sid}/>)
                     }
@@ -69,9 +74,7 @@ const Conference = () => {
                 </StyledChatWrapper>
             </StyledVideosWrapper>
             <StyledBottomNavigation>
-                <button>Audio</button>
-                <button>Video</button>
-                <button onClick={() => setVisibleState(prev => !prev)}>Chat</button>
+                <Button label='Chat' onClick={() => setVisibleState(prev => !prev)} />
             </StyledBottomNavigation>
         </StyledLayout>
     )

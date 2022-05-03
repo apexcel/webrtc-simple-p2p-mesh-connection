@@ -1,88 +1,218 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRecoilValue, useSetRecoilState } from "recoil";
-import socket from "../lib/socket";
 import { localStreamAtom, streamsAtom } from "../recoil/atoms";
-import useConnection from "./useConnection";
+import socket from "../lib/socket";
+import type { Connections } from "../../@types";
+import { ClientToServerEvents, ServerToClientEvents } from "../../@types/Socket";
+
+const config: RTCConfiguration = {
+    iceServers: [
+        {
+            urls: 'stun:stun.l.google.com:19302'
+        },
+        {
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+        },
+        {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+        }
+    ]
+};
 
 const useSocket = () => {
     const localStream = useRecoilValue(localStreamAtom);
     const setStreams = useSetRecoilState(streamsAtom);
+    const connections = useRef<Connections>(new Map());
 
-    const {
-        addPeer,
-        removePeer,
-        createConnection,
-        makeAnswer,
-        makeOffer,
-        connections
-    } = useConnection()
+    const addPeer = (sid: string, username: string) => {
+        connections.current.set(sid, {
+            pc: new RTCPeerConnection(config),
+            stream: null,
+            username
+        });
+        console.log('addPeer', connections.current)
+    };
+
+    const removePeer = (sid: string) => {
+        connections.current.delete(sid);
+    };
+
+    const onIceCandidate = useCallback((e: RTCPeerConnectionIceEvent) => {
+        console.log('onIceCandidate')
+        if (e.candidate) {
+            const data = {
+                type: 'candidate',
+                sdpMLineIndex: e.candidate.sdpMLineIndex,
+                sdpMid: e.candidate.sdpMid,
+                candidate: e.candidate.candidate
+            };
+            connections.current.forEach((_, sid) => socket.emit('ice-candidate', { receiver: sid, data }))
+        }
+        else {
+            console.log('End of Candidates.')
+        }
+    }, [])
+
+    const onTrack = useCallback((e: RTCTrackEvent) => {
+        console.log('onTrack', e.streams[0]);
+        connections.current.forEach(pcs => {
+            if (!pcs.stream) {
+                pcs.stream = new MediaStream(e.streams[0]);
+            }
+        });
+        const connectionsArray = Array.from(connections.current).map(([sid, { username }]) => ({ sid, stream: e.streams[0], username }));
+        setStreams(connectionsArray);
+    }, [])
+
+    const createPeerConnection = useCallback((sid: string) => {
+        try {
+            if (localStream && localStream instanceof MediaStream && connections.current.has(sid)) {
+                const { pc } = connections.current.get(sid)!
+                pc.addEventListener('icecandidate', onIceCandidate)
+                pc.addEventListener('track', onTrack)
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+            }
+        }
+        catch (err) {
+            console.error('RTCPeerConnection Failed:', err);
+        }
+    }, [localStream]);
+
+
+    const offer = useCallback(async (receiver: string) => {
+        console.log('do offer', receiver)
+        try {
+            if (!connections.current.has(receiver)) return;
+            const { pc } = connections.current.get(receiver)!;
+            const offer = await pc.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            });
+            await pc.setLocalDescription(offer);
+            socket.emit('offer', { receiver, data: offer });
+
+            console.log(`Offer to ${receiver}`)
+        }
+        catch (err) {
+            console.trace('Failed to create session description:', err);
+        }
+    }, []);
+
+    const answer = useCallback(async (receiver: string) => {
+        console.log('do answer', connections.current.has(receiver))
+        try {
+            if (!connections.current.has(receiver)) return;
+            const { pc } = connections.current.get(receiver)!;
+            const answer = await pc.createAnswer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            });
+            await pc.setLocalDescription(answer);
+            socket.emit('answer', { receiver, data: answer });
+
+            console.log(`Answer to ${receiver}`);
+        }
+        catch (err) {
+            console.trace('Failed to create session description:', err);
+        }
+    }, []);
+
+    const onSocketJoin: ServerToClientEvents['join'] = async (users) => {
+        Object.entries(users).forEach(async ([sid, username]) => {
+            addPeer(sid, username);
+            createPeerConnection(sid);
+            await offer(sid);
+        });
+    }
+
+    const onSocketJoined: ServerToClientEvents['joined'] = ({ sid, username }) => {
+        addPeer(sid, username);
+        createPeerConnection(sid);
+    }
+
+    const onSocketIceCandidate: ServerToClientEvents['ice-candidate'] = async ({ sender, data }) => {
+        console.log('Client ICE candidate')
+        await connections.current.get(sender)?.pc.addIceCandidate(new RTCIceCandidate({
+            sdpMid: data.sdpMid,
+            sdpMLineIndex: data.sdpMLineIndex,
+            candidate: data.candidate
+        }));
+    }
+
+    const onSocketGotOffer: ServerToClientEvents['got-offer'] = async ({ sender, data }) => {
+        console.log('Client got offer from', sender, data)
+        await connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data));
+        await answer(sender);
+    }
+
+    const onSocketGotAnswer: ServerToClientEvents['got-answer'] = async ({ sender, data }) => {
+        console.log('Client got answer from', sender, data)
+        await connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data));
+    }
+
+    const onSocketDisconnected: ServerToClientEvents['user-exited'] = (sid) => {
+        if (!connections.current.has(sid)) return;
+        const { pc, stream } = connections.current.get(sid)!
+        pc.close();
+        stream?.getTracks().forEach(track => track.stop());
+        removePeer(sid);
+        setStreams(prev => prev.filter(pc => pc.sid !== sid));
+    }
+
+    const onSocketGotMessage: ServerToClientEvents['got-message'] = () => {
+    }
 
     const joinRoom = (roomId: string, username: string) => {
         socket.emit('join', { roomId, username });
     }
 
-    const onSocketJoin = (users: Record<string, string>) => {
-        Object.entries(users).forEach(([sid, username]) => addPeer(sid, username));
-        Object.entries(users).forEach(([sid, username]) => createConnection(sid));
-    }
-
-    const onSocketJoined = ({ sid, username }: { sid: string, username: string }) => {
-        addPeer(sid, username);
-        createConnection(sid);
-        makeOffer(sid);
-    }
-
-    const onSocketIceCandidate = ({ sender, data }: { sender: string, data: any }) => {
-        connections.current.get(sender)?.pc.addIceCandidate(new RTCIceCandidate({
-            sdpMid: data.sdpMid,
-            sdpMLineIndex: data.sdpMLineIndex,
-            candidate: data.candidate
-        }));
-        const connectionsArray = Array.from(connections.current).map(([sid, { stream, username }]) => ({ sid, stream, username }));
-        setStreams(connectionsArray);
-    }
-
-    const onSocketGotOffer = ({ sender, data }: { sender: string, data: any }) => {
-        connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data)).then(() => {
-            makeAnswer(sender);
-        });
-    }
-
-    const onSocketGotAnswer = ({ sender, data }: { sender: string, data: any }) => {
-        connections.current.get(sender)?.pc.setRemoteDescription(new RTCSessionDescription(data));
-    }
-
-    const onSocketDisconnected = (sid: string) => {
-        if (!connections.current.has(sid)) return;
-        const { pc, stream } = connections.current.get(sid)!;
-        pc.close();
-        stream?.getTracks().forEach(track => track.stop());
-        removePeer(sid);
-        setStreams(prev => prev.filter((pcs) => pcs.sid !== sid));
+    const sendMessage = (roomId: string, message: string) => {
+        socket.emit('message', { roomId, message });
     }
 
     const connect = () => {
         useEffect(() => {
-            socket.on('join', onSocketJoin)
-            socket.on('joined', onSocketJoined)
+            socket.on('got-message', onSocketGotMessage)
             return () => {
-                socket.off('join', onSocketJoin)
+                if (socket) socket.disconnect()
+            }
+        }, [])
+
+        useEffect(() => {
+            socket.on('joined', onSocketJoined)
+            socket.on('user-exited', onSocketDisconnected)
+            return () => {
                 socket.off('joined', onSocketJoined)
+                socket.off('user-exited', onSocketDisconnected)
             }
         }, [localStream])
 
         useEffect(() => {
+            socket.on('join', onSocketJoin)
+            return () => {
+                socket.off('join', onSocketJoin)
+            }
+        }, [localStream, offer])
+
+        useEffect(() => {
             socket.on('ice-candidate', onSocketIceCandidate)
-            socket.on('have-got-offer', onSocketGotOffer)
-            socket.on('have-got-answer', onSocketGotAnswer)
-            socket.on('user-exited', onSocketDisconnected)
-            // return () => {
-            //     socket.off('ice-candidate', onSocketIceCandidate)
-            //     socket.off('have-got-offer', onSocketGotOffer)
-            //     socket.off('have-got-answer', onSocketGotAnswer)
-            //     socket.off('user-exited', onSocketDisconnected)
-            // }
-        }, [])
+            socket.on('got-answer', onSocketGotAnswer)
+            return () => {
+                socket.off('ice-candidate', onSocketIceCandidate)
+                socket.off('got-answer', onSocketGotAnswer)
+            }
+        })
+
+        useEffect(() => {
+            socket.on('got-offer', onSocketGotOffer)
+            return () => {
+                socket.off('got-offer', onSocketGotOffer)
+            }
+        }, [answer])
     }
 
     return {

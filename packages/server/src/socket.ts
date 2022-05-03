@@ -16,9 +16,9 @@ export default (server: HttpServer, app: App) => {
 
     app.set('io', io);
 
-
-    io.on('connect', socket => {
-        socket.on('join', async ({ roomId, username }) => {
+    io.on('connection', socket => {
+        console.log('user connected')
+        socket.on('join', ({ roomId, username }) => {
             socket.join(roomId);
 
             if (!rooms.has(roomId)) {
@@ -33,19 +33,6 @@ export default (server: HttpServer, app: App) => {
                 socket.broadcast.emit('joined', { sid: socket.id, username });
                 io.to(socket.id).emit('join', users);
             }
-
-
-            // const sids = await io.in(roomId).allSockets().then(res => Array.from(res));
-
-            // if (!sids.length) {
-            //     socket.join(roomId);
-            // }
-            // else {
-            //     const exceptIncomer = sids.filter(sid => sid !== socket.id);
-            //     socket.join(roomId);
-            //     socket.broadcast.emit('joined', socket.id);
-            //     io.to(socket.id).emit('join', exceptIncomer);
-            // }
         })
 
         socket.on('ice-candidate', ({ receiver, data }) => {
@@ -69,12 +56,13 @@ export default (server: HttpServer, app: App) => {
         //     delete room[sid];
         //     socket.broadcast.emit('have-got-user-exit', socket.id);
         // })
-
-        socket.on('disconnect', () => {
+        
+        socket.on('disconnect', (reason) => {
             rooms.forEach(room => {
                 if (room[socket.id]) delete room[socket.id];
             })
-            socket.broadcast.emit('user-exited', socket.id);
+            console.log('disconnected', reason, socket.id);
+            io.emit('user-exited', socket.id);
         })
     });
 };

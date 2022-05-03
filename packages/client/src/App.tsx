@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { useRecoilValue } from 'recoil';
 import useLocalStream from './hooks/useLocalStream';

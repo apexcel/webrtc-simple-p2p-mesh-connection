@@ -1,9 +1,7 @@
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+import { ClientToServerEvents, ServerToClientEvents } from "../../@types/Socket";
 
-const dev = 'ws://localhost:5000/';
-const prod = 'wss://webrtc-simple-p2p-mesh.herokuapp.com/'
-
-const url = prod;
-const socket = io(url);
+const url = process.env.REACT_APP_SOCKET_URL!;
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(url);
 
 export default socket;

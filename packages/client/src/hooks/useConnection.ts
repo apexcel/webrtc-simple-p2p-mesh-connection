@@ -1,10 +1,10 @@
-import { useRef } from "react";
+import {  useRef } from "react";
 import { useRecoilValue } from "recoil";
 import { Connections } from "../../@types";
 import socket from "../lib/socket";
-import { localStreamAtom } from "../recoil/atoms";
+import { localStreamAtom, streamsAtom } from "../recoil/atoms";
 
-const pcConfig: RTCConfiguration = {
+const config: RTCConfiguration = {
     iceServers: [
         {
             urls: 'stun:stun.l.google.com:19302'
@@ -25,63 +25,72 @@ const pcConfig: RTCConfiguration = {
 const useConnection = () => {
     const connections = useRef<Connections>(new Map());
     const localStream = useRecoilValue(localStreamAtom);
+    const setStreams = useRecoilValue(streamsAtom);
 
     const addPeer = (sid: string, username: string) => {
         connections.current.set(sid, {
-            pc: new RTCPeerConnection(pcConfig),
+            pc: new RTCPeerConnection(config),
             stream: null,
             username
-        })
-    }
+        });
+        console.log('addPeer', connections.current)
+    };
 
     const removePeer = (sid: string) => {
         connections.current.delete(sid);
-    }
+    };
 
-    const createConnection = (sid: string) => {
+    const createPeerConnection = (sid: string) => {
         try {
-            if (localStream instanceof MediaStream && connections.current.has(sid)) {
-                const { pc } = connections.current.get(sid)!;
+            if (localStream && localStream instanceof MediaStream && connections.current.has(sid)) {
+                const { pc } = connections.current.get(sid)!
                 pc.addEventListener('icecandidate', onIceCandidate)
                 pc.addEventListener('track', onTrack)
-                localStream.getTracks().forEach(track => connections.current.get(sid)!.pc.addTrack(track, localStream));
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
             }
         }
         catch (err) {
-            console.error('Failed to create RTCPeerConnection:', err)
+            console.error('RTCPeerConnection Failed:', err);
         }
-    }
+    };
 
-    const makeOffer = async (sid: string) => {
+    const offer = async (receiver: string) => {
+        console.log('do offer', receiver)
         try {
-            console.log('makeOffer', connections.current, sid, connections.current.get(sid));
-            if (!connections.current.has(sid)) return;
-            const { pc } = connections.current.get(sid)!;
-            const offer = await pc.createOffer();
-            pc.setLocalDescription(offer);
-            socket.emit('offer', { receiver: sid, data: offer });
+            if (!connections.current.has(receiver)) return;
+            const { pc } = connections.current.get(receiver)!;
+            const offer = await pc.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            });
+            await pc.setLocalDescription(offer);
+            socket.emit('offer', { receiver, data: offer });
+
+            console.log(`Offer to ${receiver}`)
         }
         catch (err) {
             console.trace('Failed to create session description:', err);
         }
-    }
+    };
 
-    const makeAnswer = async (sid: string) => {
+    const answer = async (receiver: string) => {
+        console.log('do answer', connections.current.has(receiver))
         try {
-            console.log('makeAnswer', connections.current, sid, connections.current.get(sid));
-            if (!connections.current.has(sid)) return;
-            const { pc } = connections.current.get(sid)!;
+            if (!connections.current.has(receiver)) return;
+            const { pc } = connections.current.get(receiver)!;
             const answer = await pc.createAnswer({
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: true
             });
-            pc.setLocalDescription(answer);
-            socket.emit('answer', { receiver: sid, data: answer });
+            await pc.setLocalDescription(answer);
+            socket.emit('answer', { receiver, data: answer });
+
+            console.log(`Answer to ${receiver}`);
         }
         catch (err) {
             console.trace('Failed to create session description:', err);
         }
-    }
+    };
 
     const onIceCandidate = (e: RTCPeerConnectionIceEvent) => {
         console.log('onIceCandidate')
@@ -101,17 +110,21 @@ const useConnection = () => {
 
     const onTrack = (e: RTCTrackEvent) => {
         console.log('onTrack', e.streams[0]);
-        connections.current.forEach(pc => pc.stream! = e.streams[0])
+        connections.current.forEach(pcs => {
+            if (pcs.stream) {
+                pcs.stream = e.streams[0];
+            }
+        })
     }
 
     return {
         addPeer,
         removePeer,
-        createConnection,
-        makeAnswer,
-        makeOffer,
+        createPeerConnection,
+        answer,
+        offer,
         connections
-    }
+    } as const
 }
 
 export default useConnection;

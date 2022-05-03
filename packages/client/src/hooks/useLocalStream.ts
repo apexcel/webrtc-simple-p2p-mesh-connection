@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { useRecoilState } from "recoil";
 import { localStreamAtom } from "../recoil/atoms";
 
-const defaultConstraints = {
+const defaultConstraints: MediaStreamConstraints = {
     audio: true,
     video: {
         width: { ideal: 1280 },
-        height: { ideal: 720 }
+        height: { ideal: 720 },
+        aspectRatio: 1.777778
     }
 };
 
@@ -24,7 +25,6 @@ const useLocalStream = (constraints?: MediaStreamConstraints) => {
 
     useEffect(() => {
         return () => {
-            console.log(localStream)
             localStream?.getTracks().forEach(track => track.stop())
         }
     }, [localStream])

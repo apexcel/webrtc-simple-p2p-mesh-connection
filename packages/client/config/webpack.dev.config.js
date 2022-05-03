@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = (env, argv) => ({
     mode: 'development',
@@ -53,5 +54,8 @@ module.exports = (env, argv) => ({
             template: path.resolve(__dirname, '../public/index.html')
         }),
         new CleanWebpackPlugin(),
+        new Dotenv({
+            path: '.dev.env'
+        })
     ],
 })
