@@ -4,6 +4,8 @@ import styled from 'styled-components';
 const StyledWrapper = styled.div`
     position: relative;
     margin: 0 40px;
+    max-width: 480px;
+    max-height: 360px;
 `;
 
 const StyledBackUpLayer = styled.div`
@@ -45,6 +47,7 @@ const Video = ({
     const ref = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
+        console.log('Video Component uid:', uid, stream)
         if (ref.current) ref.current.srcObject = stream;
     }, [stream]);
 

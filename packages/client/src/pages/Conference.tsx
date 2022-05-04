@@ -1,42 +1,50 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import styled from 'styled-components';
 import Button from '../components/common/Button';
+import Input from '../components/common/Input';
 import Video from '../components/common/Video';
-import { localStreamAtom, streamsAtom, usernameAtom } from '../recoil/atoms';
+import Message from '../components/Message/Message';
+import { localStreamAtom, messagesAtom, streamsAtom, usernameAtom } from '../recoil/atoms';
 
 const StyledLayout = styled.div`
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+    position: absolute;
+    inset: 0;
     background-color: #303030;
 `;
 
-const StyledVideosWrapper = styled.div`
+const StyledWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+`;
+
+const StyledMain = styled.div`
     display: flex;
     flex: 1;
 `;
 
-const StyledStreamWrapper = styled.div`
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+const StyledStreamsWrapper = styled.div`
+    display: flex;
     height: 100%;
+    width:100%;
 `;
 
 const StyledChatWrapper = styled.div<{ visible: boolean }>`
-    flex: 0;
-    width: ${props => props.visible ? '400px' : 0};
-    background-color: #fff;
+    position: relative;
+    min-width: ${props => props.visible ? '380px' : 0};
     border-radius: 16px;
-    transition: width 0.35s ease-in-out;
+    background-color: #fff;
+    transition: min-width 0.35s ease-in-out;
 `;
 
-const StyledMessagesWrapper = styled.div`
-    padding: 0 20px;
-    width: 400px;
-    height: inherit;
+const StyledMessagesWrapper = styled.div<{ visible: boolean }>`
+    flex: 1;
+    position: absolute;
+    inset: 0;
     overflow-y: auto;
+    padding: ${props => props.visible ? 10 : 0}px;
+    transition: padding 0.35s ease-in-out;
 
     &::-webkit-scrollbar {
         display: none;
@@ -49,33 +57,35 @@ const StyledBottomNavigation = styled.div`
 `;
 
 const Conference = () => {
-    const localStream = useRecoilValue(localStreamAtom);
     const [visibleState, setVisibleState] = useState(false);
+    const localStream = useRecoilValue(localStreamAtom);
     const streams = useRecoilValue(streamsAtom);
     const username = useRecoilValue(usernameAtom);
-
-    useEffect(() => {
-        console.log(streams)
-    }, [streams])
+    const messages = useRecoilValue(messagesAtom);
 
     return (
         <StyledLayout>
-            <StyledVideosWrapper>
-                <StyledStreamWrapper>
-                    <Video stream={localStream} label={username}/>
-                    {
-                        streams.map(({stream, sid, username}) => <Video key={sid} stream={stream} label={username} uid={sid}/>)
-                    }
-                </StyledStreamWrapper>
-                <StyledChatWrapper visible={visibleState}>
-                    <StyledMessagesWrapper>
-
-                    </StyledMessagesWrapper>
-                </StyledChatWrapper>
-            </StyledVideosWrapper>
-            <StyledBottomNavigation>
-                <Button label='Chat' onClick={() => setVisibleState(prev => !prev)} />
-            </StyledBottomNavigation>
+            <StyledWrapper>
+                <StyledMain>
+                    <StyledStreamsWrapper>
+                        <Video stream={localStream} label={username} />
+                        {
+                            streams.map(({ stream, sid, username }) => <Video key={sid} stream={stream} label={username} uid={sid} />)
+                        }
+                    </StyledStreamsWrapper>
+                    <StyledChatWrapper visible={visibleState}>
+                        <StyledMessagesWrapper visible={visibleState}>
+                            {
+                                messages.map((data, i) => <Message key={i} {...data} />)
+                            }
+                            <Input type='text' />
+                        </StyledMessagesWrapper>
+                    </StyledChatWrapper>
+                </StyledMain>
+                <StyledBottomNavigation>
+                    <Button label='Chat' onClick={() => setVisibleState(prev => !prev)} />
+                </StyledBottomNavigation>
+            </StyledWrapper>
         </StyledLayout>
     )
 };
