@@ -1,4 +1,4 @@
-# Simple WebRTC with React
+# Simple P2P WebRTC with React
 
 - P2P(peer-to-peer) connection
 - React
