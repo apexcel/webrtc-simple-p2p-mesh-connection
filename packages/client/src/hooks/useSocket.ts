@@ -4,6 +4,7 @@ import { localStreamAtom, messagesAtom, streamsAtom } from "../recoil/atoms";
 import socket from "../lib/socket";
 import { ServerToClientEvents } from "../../@types/Socket";
 import { Connections } from "../../@types/WebRTC";
+import { MessageType } from "../../@types/Message";
 
 const config: RTCConfiguration = {
     iceServers: [
@@ -169,15 +170,15 @@ const useSocket = () => {
     }
 
     const onSocketGotMessage: ServerToClientEvents['got-message'] = (message) => {
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => [...prev, { ...message, transmission: 'receive' }]);
     }
 
     const joinRoom = (roomId: string, username: string) => {
         socket.emit('join', { roomId, username });
     }
 
-    const sendMessage = (roomId: string, message: string) => {
-        socket.emit('message', { roomId, message });
+    const sendMessage = (message: MessageType) => {
+        socket.emit('message', message);
     }
 
     const connect = () => {
@@ -194,7 +195,6 @@ const useSocket = () => {
             socket.on('joined', onSocketJoined)
             return () => {
                 socket.off('joined', onSocketJoined)
-                // socket.off('user-exited', onSocketDisconnected)
             }
         }, [localStream])
 
@@ -211,22 +211,15 @@ const useSocket = () => {
 
             return () => {
                 socket.off('ice-candidate', onSocketIceCandidate)
-                // socket.off('got-answer', onSocketGotAnswer)
                 socket.off('user-exited', onSocketDisconnected)
             }
         })
-
-        useEffect(() => {
-            // socket.on('got-offer', onSocketGotOffer)
-            return () => {
-                // socket.off('got-offer', onSocketGotOffer)
-            }
-        }, [answer])
     }
 
     return {
         connect,
         joinRoom,
+        sendMessage
     }
 }
 

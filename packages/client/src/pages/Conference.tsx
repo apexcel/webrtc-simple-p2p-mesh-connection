@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { useRecoilValue } from 'recoil';
+import React, { KeyboardEvent, useEffect, useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import styled from 'styled-components';
-import Button from '../components/common/Button';
+import { MessageType } from '../../@types/Message';
 import CircleButton from '../components/common/Button/CircleButton';
-import Input from '../components/common/Input';
+import DefaultInput from '../components/common/Input/DefaultInput';
 import Video from '../components/common/Video';
 import Message from '../components/Message/Message';
-import { localStreamAtom, messagesAtom, streamsAtom, usernameAtom } from '../recoil/atoms';
+import useInput from '../hooks/useInput';
+import useSocket from '../hooks/useSocket';
+import { localStreamAtom, messagesAtom, roomIdAtom, streamsAtom, usernameAtom } from '../recoil/atoms';
+
+import ChatIcon from '../styles/assets/chat.svg'
 
 const StyledLayout = styled.div`
     position: absolute;
@@ -23,6 +27,7 @@ const StyledWrapper = styled.div`
 const StyledMain = styled.div`
     display: flex;
     flex: 1;
+    padding: 24px 0;
 `;
 
 const StyledStreamsWrapper = styled.div`
@@ -34,6 +39,7 @@ const StyledStreamsWrapper = styled.div`
 const StyledChatWrapper = styled.div<{ visible: boolean }>`
     position: relative;
     min-width: ${props => props.visible ? '380px' : 0};
+    margin-right: 24px;
     border-radius: 16px;
     background-color: #fff;
     transition: min-width 0.35s ease-in-out;
@@ -60,12 +66,44 @@ const StyledBottomNavigation = styled.div`
     background-color: #1a1a1a;
 `;
 
+const StyledInputPositioner = styled.div`
+    position: sticky;
+    padding: 10px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    background-color: #fff;
+`;
+
 const Conference = () => {
     const [visibleState, setVisibleState] = useState(false);
     const localStream = useRecoilValue(localStreamAtom);
     const streams = useRecoilValue(streamsAtom);
     const username = useRecoilValue(usernameAtom);
-    const messages = useRecoilValue(messagesAtom);
+    const roomId = useRecoilValue(roomIdAtom);
+    const socket = useSocket();
+    const [input, onChange] = useInput<MessageType>({
+        transmission: 'send',
+        text: '',
+        sourceUserName: username,
+        roomId,
+        timestamp: Date.now()
+    });
+    
+    const [messages, setMessage] = useRecoilState(messagesAtom);
+    useEffect(() => {
+        console.log(messages)
+    }, [messages])
+
+
+    const onKeyUp = (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            setMessage(prev => [...prev, input]);
+            socket.sendMessage(input);
+            (e.target as HTMLInputElement).value = '';
+        }
+    }
 
     return (
         <StyledLayout>
@@ -82,12 +120,21 @@ const Conference = () => {
                             {
                                 messages.map((data, i) => <Message key={i} {...data} />)
                             }
-                            <Input type='text' />
+                            <StyledInputPositioner>
+                                <DefaultInput 
+                                    type='text' 
+                                    onChange={onChange}
+                                    onKeyUp={onKeyUp}
+                                    name='text'
+                                />
+                            </StyledInputPositioner>
                         </StyledMessagesWrapper>
                     </StyledChatWrapper>
                 </StyledMain>
                 <StyledBottomNavigation>
-                    <CircleButton label='Chat' onClick={() => setVisibleState(prev => !prev)} />
+                    <CircleButton label={<ChatIcon />} onClick={() => setVisibleState(prev => !prev)} />
+                    {/* <CircleButton label={} onClick={() => setVisibleState(prev => !prev)} /> */}
+                    {/* <CircleButton label={} onClick={() => setVisibleState(prev => !prev)} /> */}
                 </StyledBottomNavigation>
             </StyledWrapper>
         </StyledLayout>

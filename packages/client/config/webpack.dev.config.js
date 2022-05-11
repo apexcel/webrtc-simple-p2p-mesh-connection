@@ -6,6 +6,10 @@ const Dotenv = require('dotenv-webpack');
 module.exports = (env, argv) => ({
     mode: 'development',
     entry: './src/index.tsx',
+    output: {
+        filename: 'main.js',
+        path: path.resolve(__dirname, '../../server/public')
+    },
     devServer: {
         open: true,
         hot: true,

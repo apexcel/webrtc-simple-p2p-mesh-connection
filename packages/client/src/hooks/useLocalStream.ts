@@ -34,14 +34,6 @@ const useLocalStream = (constraints?: MediaStreamConstraints) => {
                 video: true
             })
         }
-
-        return () => {
-            localStream?.getTracks().forEach(track => track.stop())
-            setToggleState({
-                audio: false,
-                video: false
-            });
-        }
     }, [localStream])
 
     const toggleVideoTrack = () => {
@@ -61,15 +53,15 @@ const useLocalStream = (constraints?: MediaStreamConstraints) => {
     }
 
     const onMediaStream = () => {
-        // useEffect(() => {
-        //     return () => {
-        //         localStream?.getTracks().forEach(track => track.stop())
-        //         setToggleState({
-        //             audio: false,
-        //             video: false
-        //         });
-        //     }
-        // }, [localStream])
+        useEffect(() => {
+            return () => {
+                localStream?.getTracks().forEach(track => track.stop())
+                setToggleState({
+                    audio: false,
+                    video: false
+                });
+            }
+        }, [localStream])
 
         useEffect(() => {
             getMediaStream(constraints ? constraints : defaultConstraints).then(stream => {

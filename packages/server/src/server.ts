@@ -68,8 +68,8 @@ io.on('connection', socket => {
         io.to(receiver).emit('got-answer', { sender: socket.id, data })
     })
 
-    socket.on('message', ({ roomId, message }) => {
-        io.to(roomId).except(socket.id).emit('got-message', message);
+    socket.on('message', message => {
+        io.to(message.roomId).except(socket.id).emit('got-message', message);
     })
 
     socket.on('disconnect', (reason) => {

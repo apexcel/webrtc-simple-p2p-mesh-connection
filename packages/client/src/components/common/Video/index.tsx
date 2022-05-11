@@ -3,10 +3,10 @@ import styled from 'styled-components';
 import useLocalStream from '../../../hooks/useLocalStream';
 import CircleButton from '../Button/CircleButton';
 
-import PlayCircle from '../../../styles/assets/play-circle.svg'
-import PauseCircle from '../../../styles/assets/pause-circle.svg'
-import VolumeOn from '../../../styles/assets/volume-on.svg'
-import VolumeOff from '../../../styles/assets/volume-off.svg'
+import PlayCircleIcon from '../../../styles/assets/play-circle.svg'
+import PauseCircleIcon from '../../../styles/assets/pause-circle.svg'
+import VolumeOnIcon from '../../../styles/assets/volume-on.svg'
+import VolumeOffIcon from '../../../styles/assets/volume-off.svg'
 
 const StyledWrapper = styled.div`
     position: relative;
@@ -91,14 +91,14 @@ const Video = ({
                 showToggles && stream
                     ? <StyledToggleWrapper>
                         <CircleButton
-                            label={toggleState.audio ? <VolumeOff /> : <VolumeOn />}
+                            label={toggleState.audio ? <VolumeOffIcon /> : <VolumeOnIcon />}
                             onClick={toggleAudioTrack}
                             style={{
                                 backgroundColor: toggleState.audio ? '#5eb95d' : '#ef5350'
                             }}
                         />
                         <CircleButton
-                            label={toggleState.video ? <PauseCircle /> : <PlayCircle />}
+                            label={toggleState.video ? <PauseCircleIcon /> : <PlayCircleIcon />}
                             onClick={toggleVideoTrack}
                             style={{
                                 backgroundColor: toggleState.video ? '#5eb95d' : '#ef5350'

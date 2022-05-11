@@ -34,7 +34,7 @@ const Text = styled.div`
 const Speaker = styled.p<{ transmission: TransmissionType }>`
     text-align: ${props => props.transmission === 'send' ? 'right' : 'left'};
     font-weight: 500;
-    padding-bottom: 4px;
+    margin-bottom: 4px;
 `;
 
 type Props = Omit<MessageType, 'roomId'>

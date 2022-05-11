@@ -15,5 +15,5 @@ export interface ClientToServerEvents {
     'ice-candidate': ({ receiver, data }: { receiver: string, data: RTCIceCandidateInit }) => void
     'offer': ({ receiver, data }: { receiver: string, data: RTCSessionDescriptionInit }) => void
     'answer': ({ receiver, data }: { receiver: string, data: RTCSessionDescriptionInit }) => void
-    'message': ({ roomId, message }: { roomId: string, message: string }) => void
+    'message': (message: MessageType) => void
 }

@@ -4,10 +4,10 @@ import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { localStreamAtom, roomIdAtom, usernameAtom } from '../recoil/atoms';
 import Video from '../components/common/Video';
 import Button from '../components/common/Button';
-import Input from '../components/common/Input';
 import { useLocation } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
 import useInput from '../hooks/useInput';
+import OrnamentInput from '../components/common/Input/OrnamentInput';
 
 const StyledLayout = styled.div`
     display: flex;
@@ -53,7 +53,7 @@ const Preparation = () => {
                 <Video stream={localStream} showToggles/>
             </StyledVideoWrapper>
             <StyledFormWrapper>
-                <Input
+                <OrnamentInput
                     type='text'
                     name='userName'
                     label='Username'

@@ -5,9 +5,9 @@ import styled from 'styled-components';
 import { requestCreateNewRoom } from '../api';
 import { roomIdAtom, usernameAtom } from '../recoil/atoms';
 import Button from '../components/common/Button';
-import Input from '../components/common/Input';
 import useSocket from '../hooks/useSocket';
 import useInput from '../hooks/useInput';
+import OrnamentInput from '../components/common/Input/OrnamentInput';
 
 const StyledMain = styled.div`
     width: 720px;
@@ -40,7 +40,7 @@ const Landing = () => {
     return (
         <StyledMain>
             <h1>WebRTC Simple P2P Mesh Connection</h1>
-            <Input
+            <OrnamentInput
                 type='text'
                 name='userName'
                 label='Username'
