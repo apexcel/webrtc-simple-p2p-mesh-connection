@@ -1,5 +1,12 @@
 import React, { memo, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import useLocalStream from '../../../hooks/useLocalStream';
+import CircleButton from '../Button/CircleButton';
+
+import PlayCircle from '../../../styles/assets/play-circle.svg'
+import PauseCircle from '../../../styles/assets/pause-circle.svg'
+import VolumeOn from '../../../styles/assets/volume-on.svg'
+import VolumeOff from '../../../styles/assets/volume-off.svg'
 
 const StyledWrapper = styled.div`
     position: relative;
@@ -27,6 +34,19 @@ const StyledLabel = styled.div`
     margin: 10px;
 `;
 
+const StyledToggleWrapper = styled.div`
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 14px 0;
+    text-align: center;
+
+    & button {
+        margin: 0 10px;
+    }
+`;
+
 const StyledVideo = styled.video`
     display: block;
     width: 100%;
@@ -37,23 +57,29 @@ interface Props {
     stream: MediaStream | null
     label?: string
     uid?: string
+    showToggles?: boolean
 }
 
 const Video = ({
     stream,
     label,
     uid,
+    showToggles = false
 }: Props) => {
     const ref = useRef<HTMLVideoElement>(null);
+    const {
+        toggleAudioTrack,
+        toggleVideoTrack,
+        toggleState
+    } = useLocalStream();
 
     useEffect(() => {
-        console.log('Video Component uid:', uid, stream)
         if (ref.current) ref.current.srcObject = stream;
     }, [stream]);
 
     return (
         <StyledWrapper>
-            { label ? <StyledLabel>{label}</StyledLabel> : null }
+            {label ? <StyledLabel>{label}</StyledLabel> : null}
             <StyledVideo
                 ref={ref}
                 playsInline={true}
@@ -61,6 +87,26 @@ const Video = ({
                 data-uid={uid}
             />
             <StyledBackUpLayer />
+            {
+                showToggles && stream
+                    ? <StyledToggleWrapper>
+                        <CircleButton
+                            label={toggleState.audio ? <VolumeOff /> : <VolumeOn />}
+                            onClick={toggleAudioTrack}
+                            style={{
+                                backgroundColor: toggleState.audio ? '#5eb95d' : '#ef5350'
+                            }}
+                        />
+                        <CircleButton
+                            label={toggleState.video ? <PauseCircle /> : <PlayCircle />}
+                            onClick={toggleVideoTrack}
+                            style={{
+                                backgroundColor: toggleState.video ? '#5eb95d' : '#ef5350'
+                            }}
+                        />
+                    </StyledToggleWrapper>
+                    : null
+            }
         </StyledWrapper>
     )
 }

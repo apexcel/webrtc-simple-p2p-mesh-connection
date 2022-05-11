@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import styled from 'styled-components';
 import Button from '../components/common/Button';
+import CircleButton from '../components/common/Button/CircleButton';
 import Input from '../components/common/Input';
 import Video from '../components/common/Video';
 import Message from '../components/Message/Message';
@@ -52,6 +53,9 @@ const StyledMessagesWrapper = styled.div<{ visible: boolean }>`
 `;
 
 const StyledBottomNavigation = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
     height: 64px;
     background-color: #1a1a1a;
 `;
@@ -83,7 +87,7 @@ const Conference = () => {
                     </StyledChatWrapper>
                 </StyledMain>
                 <StyledBottomNavigation>
-                    <Button label='Chat' onClick={() => setVisibleState(prev => !prev)} />
+                    <CircleButton label='Chat' onClick={() => setVisibleState(prev => !prev)} />
                 </StyledBottomNavigation>
             </StyledWrapper>
         </StyledLayout>

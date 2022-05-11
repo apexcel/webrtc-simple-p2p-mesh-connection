@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 import { localStreamAtom } from "../recoil/atoms";
 
@@ -21,27 +21,75 @@ const getMediaStream = async (constraints: MediaStreamConstraints) => {
 }
 
 const useLocalStream = (constraints?: MediaStreamConstraints) => {
-    const [localStream, setLocalStream] = useRecoilState(localStreamAtom)
+    const [localStream, setLocalStream] = useRecoilState(localStreamAtom);
+    const [toggleState, setToggleState] = useState({
+        audio: false,
+        video: false
+    });
 
     useEffect(() => {
+        if (localStream && localStream instanceof MediaStream) {
+            setToggleState({
+                audio: true,
+                video: true
+            })
+        }
+
         return () => {
             localStream?.getTracks().forEach(track => track.stop())
+            setToggleState({
+                audio: false,
+                video: false
+            });
         }
     }, [localStream])
 
-    useEffect(() => {
-        getMediaStream(constraints ? constraints : defaultConstraints).then(stream => {
-            if (stream) {
-                setLocalStream(stream);
-            }
-        })
+    const toggleVideoTrack = () => {
+        localStream?.getVideoTracks().forEach(track => track.enabled = !track.enabled);
+        setToggleState(prev => ({
+            ...prev,
+            video: !prev.video
+        }))
+    }
 
-        // return () => {
-        //     localStream?.getTracks().forEach(track => track.stop())
-        // }
-    }, [])
+    const toggleAudioTrack = () => {
+        localStream?.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+        setToggleState(prev => ({
+            ...prev,
+            audio: !prev.audio
+        }))
+    }
 
-    return localStream;
+    const onMediaStream = () => {
+        // useEffect(() => {
+        //     return () => {
+        //         localStream?.getTracks().forEach(track => track.stop())
+        //         setToggleState({
+        //             audio: false,
+        //             video: false
+        //         });
+        //     }
+        // }, [localStream])
+
+        useEffect(() => {
+            getMediaStream(constraints ? constraints : defaultConstraints).then(stream => {
+                if (stream) {
+                    setLocalStream(stream);
+                    setToggleState({
+                        audio: true,
+                        video: true
+                    });
+                }
+            })
+        }, [])
+    }
+
+    return {
+        onMediaStream,
+        toggleAudioTrack,
+        toggleVideoTrack,
+        toggleState
+    };
 }
 
 export default useLocalStream;

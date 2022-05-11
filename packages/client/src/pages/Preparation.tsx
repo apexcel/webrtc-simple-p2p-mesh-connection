@@ -13,15 +13,13 @@ const StyledLayout = styled.div`
     display: flex;
     height: 540px;
     align-items: center;
-    justift-content: center;
+    justify-content: center;
 `;
 
 const StyledVideoWrapper = styled.div`
-    flex: 1;
 `;
-    
+
 const StyledFormWrapper = styled.div`
-    flex: 1;
     text-align: center;
 `;
 
@@ -29,6 +27,7 @@ const Preparation = () => {
     const [form, setForm] = useInput({
         userName: ''
     });
+
     const localStream = useRecoilValue(localStreamAtom);
     const location = useLocation();
     const socket = useSocket();
@@ -51,7 +50,7 @@ const Preparation = () => {
     return (
         <StyledLayout>
             <StyledVideoWrapper>
-                <Video stream={localStream} />
+                <Video stream={localStream} showToggles/>
             </StyledVideoWrapper>
             <StyledFormWrapper>
                 <Input

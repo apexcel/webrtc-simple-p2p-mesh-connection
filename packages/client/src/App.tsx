@@ -9,21 +9,21 @@ import Preparation from './pages/Preparation';
 import { usernameAtom } from './recoil/atoms';
 
 const App = () => {
-    useLocalStream();
     useEffect(() => {
         document.body.style.margin = '0';
-    }, [])
+    }, []);
 
     const userName = useRecoilValue(usernameAtom);
-    const socket = useSocket();
-    socket.connect();
+    useLocalStream().onMediaStream();
+    useSocket().connect();
 
     return (
         <>
-            <Routes>
+        <Preparation />
+            {/* <Routes>
                 <Route path='/' element={<Landing />} />
                 <Route path='/*' element={userName ? <Conference /> : <Preparation />} />
-            </Routes>
+            </Routes> */}
         </>
     )
 };

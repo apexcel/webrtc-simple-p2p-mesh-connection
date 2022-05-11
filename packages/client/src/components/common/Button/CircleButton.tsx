@@ -8,20 +8,24 @@ const StyledCirlceButton = styled.button`
     border-radius: 20px;
     border: 0;
     box-shadow: none;
-    background-color: #61b760;
+    background-color: ${props => props.style?.backgroundColor ?? '#eaeaea'};
     color: #fff;
     cursor: pointer;
 `;
 
-interface Props extends HTMLAttributes<HTMLButtonElement> {
-    label: string
+interface Props {
+    label: string | React.ReactNode
+    onClick?: (...args: any) => void
+    style?: React.CSSProperties
 }
 
 const CircleButton = ({
-    label
+    label,
+    onClick,
+    style
 }: Props) => {
     return (
-        <StyledCirlceButton>
+        <StyledCirlceButton onClick={onClick} style={style}>
             {label}
         </StyledCirlceButton>
     )

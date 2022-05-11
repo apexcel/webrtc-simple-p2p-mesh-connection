@@ -60,13 +60,8 @@ const useSocket = () => {
 
     const onTrack = useCallback((e: RTCTrackEvent, sid: string) => {
         console.log('onTrack', e.streams[0]);
-        connections.current.forEach(({ stream }, id) => {
-            if (id === sid) {
-                stream = new MediaStream(e.streams[0])
-            }
-            else {
-                stream = e.streams[0];
-            }
+        connections.current.forEach(({ stream }) => {
+            stream = e.streams[0];
         });
         const target = connections.current.get(sid);
         setStreams(prev => prev
